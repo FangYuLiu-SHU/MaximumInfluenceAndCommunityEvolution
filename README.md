@@ -21,9 +21,10 @@
 &emsp;&emsp;4.前端页面框架layui： https://www.layui.com/doc/ <br>
 &emsp;&emsp;5.前端页面框架layui镜像（框架官网被叫停下架了）： https://layui.11dz.cn/ <br>
 # 任务说明
-该平台主要包含如下两个模块：<br>
+该平台主要包含如下三个模块：<br>
 &emsp;&emsp;1.影响力最大化（郭易兴）<br>
-&emsp;&emsp;2.社区划分模块（郭易兴）<br>
+&emsp;&emsp;2.静态社区划分模块（郭易兴）<br>
+&emsp;&emsp;3.动态社区划分模块（郭易兴）<br>
 &emsp;&emsp;各自部分的子页面有简单从以前项目拷贝过来，对应放置在templates下面，具体页面撰写以及具体页面补充视自由发挥情况<br>
 # 项目文件放置说明
 &emsp;&emsp;1.个人撰写的后端.py代码放置在algorithm文件夹下<br>
