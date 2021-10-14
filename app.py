@@ -63,23 +63,41 @@ def DemonstrationOfMaximumInfluenceModel():
     '''
     return render_template('DemonstrationOfMaximumInfluenceModel.html')
 
-# 介绍社区划分模型，跳转服务
-@app.route('/introduceCommunityDivisionModel')
-def introduceCommunityDivisionModel():
+# 介绍静态社区划分模型，跳转服务
+@app.route('/introduceStaticCommunityDivisionModel')
+def introduceStaticCommunityDivisionModel():
     '''
     TODO
     :return:
     '''
-    return render_template('introduceCommunityDivisionModel.html')
+    return render_template('introduceStaticCommunityDivisionModel.html')
 
-# 社区划分模型展示，后端服务
-@app.route('/DemonstrationOfCommunityDivisionModel')
-def DemonstrationOfCommunityDivisionModel():
+# 静态社区划分模型展示，后端服务
+@app.route('/DemonstrationOfStaticCommunityDivisionModel')
+def DemonstrationOfStaticCommunityDivisionModel():
     '''
     TODO
     :return:
     '''
-    return render_template('DemonstrationOfCommunityDivisionModel.html')
+    return render_template('DemonstrationOfStaticCommunityDivisionModel.html')
+
+# 介绍动态社区划分模型，跳转服务
+@app.route('/introduceDynamicCommunityDivisionModel')
+def introduceDynamicCommunityDivisionModel():
+    '''
+    TODO
+    :return:
+    '''
+    return render_template('introduceDynamicCommunityDivisionModel.html')
+
+# 动态社区划分模型展示，后端服务
+@app.route('/DemonstrationOfDynamicCommunityDivisionModel')
+def DemonstrationOfDynamicCommunityDivisionModel():
+    '''
+    TODO
+    :return:
+    '''
+    return render_template('DemonstrationOfDynamicCommunityDivisionModel.html')
 
 if __name__ == '__main__':
     app.run()
