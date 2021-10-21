@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="utf-8">
+</head>
+<body style="height: 100%; margin: 0">
+<div id="container" style="height: 100%"></div>
+<script type="text/javascript" src="/static/js/echarts.js"></script>
+<script type="text/javascript" src="/static/js/function.js"></script>
+<script src="../static/js/jquery.js"></script>
+<script src="../static/js/jquery.cookie.js"></script>
+<script type="text/javascript">
+<!--    (()=>{-->
+<!--        if($.cookie('user') == undefined)-->
+<!--            $(window).attr('location','/login');-->
+<!--    })()-->
+    var dom = document.getElementById("container");
+    var myChart = echarts.init(dom);
+    var option;
+    var graph = {{ graph_data | tojson }}//获取后端返回的图数据
+    graph = init_graph(graph);  //初始化图数据
+    option = init_option(graph);//初始化属性
+    myChart.setOption(option);//执行该语句就可以根据你设置的属性进行图的生成
+
+    var active_records = {{ active_records | tojson }};
+    active_records = JSON.parse(active_records);
+    var method={{ method_type }};//获取使用的哪种方法，方便后面的节点激活过程的显示
+    var edge_records={{edge_records}}
+    var max_influence_node={{max_influence_node}};
+    var max_node_influence={{max_node_influence}};
+    var node_no = 0;		//用来记录当前显示的节点
+    var record_node_no = 0;	//记录当前被激活的节点数
+    var stimulate_round=0;	//记录模拟的次数
+    var node_no_acv;		//记录节点node_no激活的节点
+    var active_source_node=0;//记录当前去激活的节点
+    var activated_node=0;//记录被激活的节点
+    var index=0;//记录激活数量的列表 active_nums
+    var num=0;//记录激活的数量
+    var count=0;//记录每个索引位置index的值的大小
+    var current_link=0;//记录当前的激活边
+    var links_arr=new Array()//存放每个节点所有的激活边
+    var s="";
+    var text = "节点0的激活过程";	//标题
+    var subtext;				//副标题
+
+
+    node_no_acv = record_node_num(node_no,stimulate_round,active_records);
+    if(method == 1) 	//记录副标题
+        subtext="当前节点的影响力为:"+active_records[0].length+"\n";
+    else
+        subtext="当前节点第1次模拟的影响力为:"+active_records[0][0].length+"\n";
+
+    update_show(text,subtext,myChart);
+    interval_no = setInterval(function () {
+        if(node_no==active_records.length)//所有节点显示完毕后，显示影响力最大的节点
+        {
+            if(method == 1)//1次模拟：显示影响力最大的节点影响的节点数
+            {
+                for(var i=0;i<active_records[max_influence_node].length;i+=1){
+                graph.nodes[active_records[max_influence_node][i]].category=1;
+                graph.nodes[active_records[max_influence_node][i]].symbolSize=25;
+                if(i!=0){//设置被影响的节点的边的样式
+                    graph.links[edge_records[max_influence_node][i]].lineStyle.width = 6;
+                    graph.links[edge_records[max_influence_node][i]].lineStyle.color='blue';
+                    }
+                }
+                subtext="影响力为"+max_node_influence;
+            }
+            else//10次模拟：显示平均的影响力
+                subtext="平均影响力为"+max_node_influence;
+            graph.nodes[max_influence_node].category=1;
+            graph.nodes[max_influence_node].symbolSize=25;
+            text = "影响力最大的节点为："+max_influence_node;
+            update_show(text,subtext,myChart);
+            clearInterval(interval_no);// 跳出setInterval，结束循环
+        }
+        else{
+            if (record_edge_num(node_no,stimulate_round,edge_records)[record_node_no]!=-1 && record_node_no != 0) {
+//Object.keys(record_node_num(node_no,stimulate_round,active_records)).length != 1
+                links_arr.push(record_edge_num(node_no,stimulate_round,edge_records)[record_node_no]);
+                graph.links[record_edge_num(node_no,stimulate_round,edge_records)[record_node_no]].lineStyle.width = 6;//设置当前激活路径的宽度
+                graph.links[record_edge_num(node_no,stimulate_round,edge_records)[record_node_no]].lineStyle.color = 'blue';//设置当前激活路径的颜色
+
+                //current_link=getLinkIdBySourceAndTarget(graph, active_source_node, activated_node)
+
+            }
+            graph.nodes[node_no_acv[record_node_no]].symbolSize=25;
+            graph.nodes[node_no_acv[record_node_no]].category=1;
+            text = '节点'+node_no+'的激活过程';
+            update_show(text,subtext,myChart);
+            record_node_no+=1;
+            if(record_node_no==node_no_acv.length)
+            //10次模拟：当前模拟结束，进行下一次模拟，1次模拟：当前节点的影响力显示完毕，显示下一个节点	清除上个节点的记录
+            {
+                for(var i=0;i<node_no_acv.length;i+=1){
+                    graph.nodes[node_no_acv[i]].category=0;
+                    graph.nodes[node_no_acv[i]].symbolSize=15;
+                }
+                
+
+                for(var link=0;link<links_arr.length;link++){
+                    graph.links[links_arr[link]].lineStyle.width=1;
+                    graph.links[links_arr[link]].lineStyle.color='rgba(0, 0, 0, 0.7)';
+                }
+                links_arr=[];//显示下一个节点的激活过程时，将边的数组清空
+
+                if(method == 1)	//1次模拟：
+                {
+                    node_no++;	//节点自加
+                }
+                else{ 			//10次模拟
+                    stimulate_round++;
+                    if(stimulate_round==10){
+                        stimulate_round=0;
+                        node_no++;
+                        subtext="";
+                    }
+                }
+                //更新节点node_no所激活的节点
+                if(node_no<=104){
+                    node_no_acv = record_node_num(node_no,stimulate_round,active_records);
+                    record_node_no=0;
+                    index=0;
+                    num=0;
+                    if(method != 1) s="第"+(stimulate_round+1)+"次模拟";
+                    else subtext="";
+                    subtext+="当前节点"+s+"的影响力为:"+node_no_acv.length+"\n";
+                }
+            }
+        }
+    },1000)
+    function record_edge_num(num,round,edge)//边edge的激活记录
+    {
+        if(typeof(edge[0][0])=="number")
+            return edge[num];
+        else
+            return edge[num][round];
+
+    }
+    function record_node_num(num,round,active_records)//节点num的激活记录
+    {
+        if(typeof(active_records[0][0])=="number")
+            return active_records[num];
+        else
+            return active_records[num][round];
+
+    }
+    function update_show(text,subtext,myChart)//更新画面
+    {
+        myChart.setOption({
+           title:{
+                text:text,
+                subtext: subtext
+           },
+           series:[{
+               data:graph.nodes,
+               links:graph.links
+           }]
+       })
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="../static/layui/css/layui.css" media="all">
+    <style>
+        .container{
+            width:50%;
+            height:100%;
+            float: left;
+        }
+        .control{
+            float: left;
+            margin-top:20px;
+            width:24%;
+        }
+    </style>
+</head>
+<body style="height: 100%; margin: 0">
+    <div style="height: 20%;">
+        <form class="layui-form" method="post">
+          <div class="control">
+            <label class="layui-form-label">输入节点1</label>
+            <div class="layui-input-block">
+              <input type="text" name="value1" placeholder="请输入节点集合" autocomplete="off" class="layui-input">
+                <i class="layui-icon layui-icon-about" title="请输入0-104中的一个或多个数字"></i>
+            </div>
+          </div>
+          <div class="control">
+              <label class="layui-form-label">选择算法1</label>
+                <div class="layui-input-block">
+                  <select name="method1" lay-verify="required">
+                    <option value=""></option>
+                    <option value="1">IC模型(1次）</option>
+                    <option value="2">IC模型(10次）</option>
+                    <option value="3">LT模型</option>
+                    <option value="4">pageRank算法</option>
+                    <option value="5">最大度算法</option>
+                  </select>
+                </div>
+           </div>
+            <div class="control">
+                <label class="layui-form-label">输入节点2</label>
+                <div class="layui-input-block">
+                  <input type="text" name="value2" placeholder="请输入节点集合" autocomplete="off" class="layui-input">
+                    <i class="layui-icon layui-icon-about" title="请输入0-104中的一个或多个数字"></i>
+                </div>
+          </div>
+          <div class="control">
+              <label class="layui-form-label">选择算法2</label>
+                <div class="layui-input-block">
+                  <select name="method2" lay-verify="required">
+                    <option value=""></option>
+                    <option value="1">IC模型(1次）</option>
+                    <option value="2">IC模型(10次）</option>
+                    <option value="3">LT模型</option>
+                    <option value="4">pageRank算法</option>
+                    <option value="5">最大度算法</option>
+                  </select>
+                </div>
+          </div>
+          <div class="layui-form-item" style="float:right;margin-right:4%;">
+            <div class="layui-input-block">
+              <button class="layui-btn" lay-submit lay-filter="*">提交</button>
+            </div>
+          </div>
+        </form>
+    </div>
+    <div style="height:80%;">
+        <div id="container1" class="container"></div>
+        <div id="container2" class="container"></div>
+    </div>
+    <script src="../static/layui/layui.js"></script>
+    <script type="text/javascript" src="/static/js/echarts.js"></script>
+    <script type="text/javascript" src="/static/js/function.js"></script>
+    <script src="../static/js/jquery.js"></script>
+    <script src="../static/js/jquery.cookie.js"></script>
+    <script type="text/javascript">
+<!--        (()=>{-->
+<!--            if($.cookie('user') == undefined)-->
+<!--                $(window).attr('location','/login');-->
+<!--        })()-->
+        layui.use('form', function(){
+          var form = layui.form;
+          var layer = layui.layer;
+
+          //各种基于事件的操作
+          form.on('submit(*)', function(data){
+              if(data.field.value1 == ""){
+                layer.msg("请输入节点集合1");
+                return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+              }else if(data.field.value2 == ""){
+                layer.msg("请输入节点集合2");
+                return false;
+              }
+           });
+        });
+
+        var dom1 = document.getElementById("container1");
+        var graph1 = {{ graph_data | tojson }}
+        var err1={{ err1 | tojson }};
+        var active_records1 = {{ active_records1 | tojson }};
+        var temp1 = {{ seed1 | tojson }}; //输入的节点集合1
+        var method1 = {{ method1 | tojson }};
+        var edge_records1={{edge_records1|tojson}};
+        drawGragh(dom1,graph1,err1,active_records1,temp1,1,method1,edge_records1);
+
+        var dom2 = document.getElementById("container2");
+        var graph2 = {{ graph_data | tojson }}
+        var err2={{ err2 | tojson }};
+        var active_records2 = {{ active_records2 | tojson }};
+        var temp2 = {{ seed2 | tojson }}; //输入的节点集合2
+        var method2 = {{ method2 | tojson }};
+        var edge_records2={{edge_records2|tojson}};
+        drawGragh(dom2,graph2,err2,active_records2,temp2,2,method2,edge_records2);
+
+        function drawGragh(dom,graph,err,active_records,seed,no,method,edge_records){
+            var myChart = echarts.init(dom);
+            var option;
+            graph = init_graph(graph);  //初始化图数据
+            option = init_option(graph);//初始化属性
+            var categories = [];
+            categories[0] = {
+                name: '未激活节点',
+                itemStyle: {
+                    color: '#2f4554',
+                    opacity: 0.9, //不透明度
+                }
+            }
+            categories[1] = {
+                name: '激活节点',
+                itemStyle: {
+                    color: '#009688',
+                    opacity: 1, //不透明度
+                },
+                label: {
+                    fontSize: 20,
+                },
+            };
+            option.legend = [{
+                // selectedMode: 'single',
+                right: '10%', //图例的位置
+                data: categories.map(function (a) {
+                    return a.name;
+                })
+            }],
+            myChart.setOption(option);//执行该语句就可以根据你设置的属性进行图的生成
+            if(err=="false"){
+                var active_records = JSON.parse(active_records);
+                if(method == 1){ //IC模型模拟一次
+                    var record_node_no = 0;//用来记录当前显示节点的记录的编号
+                    myChart.setOption({
+                        title: {
+                            text: '输入集合'+no+':'+seed+' IC模型模拟一次的激活过程',
+                            subtext: '输入集合的影响力是' + active_records.length,
+                            top: 'top',
+                            left: 'left'
+                        },
+                    });
+                    var interval_no = setInterval(function () {
+                        graph.nodes[active_records[record_node_no]].category = 1;
+                        graph.nodes[active_records[record_node_no]].symbolSize = 30;
+                        myChart.setOption({
+                            series: [
+                            {
+                            data: graph.nodes,
+                                links: graph.links
+                            }
+                        ]
+                        })
+                        record_node_no+=1;
+                        if(record_node_no>=active_records.length)//当全部节点显示完毕后跳出循环
+                            clearInterval(interval_no);
+                        else{
+                            if(edge_records[record_node_no]!=-1){
+                                graph.links[edge_records[record_node_no]].lineStyle.width=6;
+                                graph.links[edge_records[record_node_no]].lineStyle.color='blue';
+                            }
+                        }
+                    }, 1500);
+                }else if(method == 3 || method == 2){//LT或IC模型模拟10次
+                    var sum=0;
+                    active_records.forEach(function(records){
+                        sum+=records.length;
+                    })
+                    var stimulate_round=0;	//记录模拟的次数
+                    var record_node_no = 0;//用来记录当前显示节点的记录的编号
+                    var title = '';
+                    if(method == 2){
+                        title = '输入集合'+no+':'+seed+' IC模型模拟十次的平均影响力是' + sum/10;
+                    }else if(method == 3){
+                        title = '输入集合'+no+':'+seed+' LT模型模拟十次的平均影响力是' + sum/10;
+                    }
+                    myChart.setOption({
+                            title: {
+                                text: title,
+                                top: 'top',
+                                left: 'left'
+                            },
+                            series: [{
+                                data: graph.nodes,
+                                links: graph.links
+                            }]
+                        })
+                    var edge=[];
+                    var interval_no = setInterval(function () {
+                        graph.nodes[active_records[stimulate_round][record_node_no]].category = 1;
+                        graph.nodes[active_records[stimulate_round][record_node_no]].symbolSize = 30;
+                        myChart.setOption({
+                            title: {
+                                text: title,
+                                subtext: '第'+(stimulate_round+1)+'次模拟的激活过程',
+                                top: 'top',
+                                left: 'left'
+                            },
+                            series: [{
+                                data: graph.nodes,
+                                links: graph.links
+                            }]
+                        })
+                        record_node_no+=1
+                        if(record_node_no>=active_records[stimulate_round].length){
+                            edge.forEach(function(ed){
+                                graph.links[ed].lineStyle.width=1;
+                                graph.links[ed].lineStyle.color='rgba(0, 0, 0, 0.7)';
+                            })
+                            active_records[stimulate_round].forEach(function(node){
+                                graph.nodes[node].category=0;
+                                graph.nodes[node].symbolSize=15;
+                            });
+                            stimulate_round++;
+                            record_node_no = 0;
+                            step=1;
+                            edge=[];
+                            if(stimulate_round==10){
+                                clearInterval(interval_no);
+                            }
+                        }
+                        else{
+                            if(edge_records[stimulate_round][record_node_no]!=-1){
+                                try{
+                                    edge.push(edge_records[stimulate_round][record_node_no]);
+                                    graph.links[edge_records[stimulate_round][record_node_no]].lineStyle.width=6;
+                                    graph.links[edge_records[stimulate_round][record_node_no]].lineStyle.color='blue';
+                                }
+                                catch(aaa)
+                                {
+                                    var i=1
+                                    }
+                            }
+                        }
+                    }, 1500);
+                }else if(method == 4){//pageRank算法
+                    var record_node_no = 0;//用来记录当前显示节点的记录的编号
+                    myChart.setOption({
+                        title: {
+                            text: '输入集合'+no+':'+seed+' 在pageRank算法下的影响力是' + active_records.toFixed(2),
+                            //subtext: '输入集合的影响力是' + active_records,
+                            top: 'top',
+                            left: 'left'
+                        },
+                    });
+                    var interval_no = setInterval(function () {
+                        graph.nodes[seed[record_node_no]].category = 1;
+                        graph.nodes[seed[record_node_no]].symbolSize = 25;
+                        myChart.setOption({
+                            series: [{
+                                data: graph.nodes,
+                                links: graph.links
+                            }]
+                        })
+                        record_node_no+=1
+                        if(record_node_no==seed.length)//当全部节点显示完毕后跳出循环
+                            clearInterval(interval_no);
+                    }, 1500);
+                }else if(method == 5){//最大度算法
+                    var record_node_no = 0;//用来记录当前显示节点的记录的编号
+                    myChart.setOption({
+                        title: {
+                            text: '输入集合'+no+':'+seed+' 在最大度算法下的影响力是' + active_records.length,
+                            //subtext: '输入集合的影响力是' + active_records.length,
+                            top: 'top',
+                            left: 'left'
+                        },
+                    });
+                    var interval_no = setInterval(function () {
+                        graph.nodes[active_records[record_node_no]].category = 1;
+                        graph.nodes[active_records[record_node_no]].symbolSize = 25;
+                        myChart.setOption({
+                            series: [
+                            {
+                                data: graph.nodes,
+                                links: graph.links
+                            }
+                        ]
+                        })
+                        record_node_no+=1
+                        if(record_node_no>=active_records.length)//当全部节点显示完毕后跳出循环
+                            clearInterval(interval_no);
+                        else{
+                            if(edge_records[record_node_no]!=-1){
+                                graph.links[edge_records[record_node_no]].lineStyle.width=6;
+                                graph.links[edge_records[record_node_no]].lineStyle.color='blue';
+                            }
+                        }
+                    }, 1500);
+                }
+            }else{
+                if(err!="true"){
+                    layui.use('layer', function(){
+                       var layer = layui.layer;
+                       layer.msg(err);
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+</html>

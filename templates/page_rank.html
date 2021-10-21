@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html style="height: 100%; initial-scale: 0.1">
+<head>
+    <meta charset="UTF-8">
+    <title>page_rank算法计算过程</title>
+</head>
+<body style="height: 100%; margin: 0">
+<div id="container" style="height: 100%"></div>
+<script type="text/javascript" src="/static/js/echarts.js"></script>
+<script type="text/javascript" src="/static/js/function.js"></script>
+<script src="../static/js/jquery.js"></script>
+<script src="../static/js/jquery.cookie.js"></script>
+<script type="text/javascript">
+<!--    (()=>{-->
+<!--        if($.cookie('user') == undefined)-->
+<!--            $(window).attr('location','/login');-->
+<!--    })()-->
+    var dom = document.getElementById("container");
+    var myChart = echarts.init(dom);
+    var option;
+    var graph = {{ graph_data | tojson }}//获取后端返回的图数据
+    graph = init_graph(graph);  //初始化图数据
+    option = init_option(graph);//初始化属性
+    myChart.setOption(option);//执行该语句就可以根据你设置的属性进行图的生成
+	
+	//显示page_rank算法的计算过程
+	var influences = {{ influences }};
+	var max_influence = {{ max_influence }};
+	var max_inf_node = {{ max_inf_node }};
+	var node_now = 0;	//当前计算的节点
+	var iter = 1;		//当前迭代次数
+	var node_num = 104;
+	var max_iter = 9;
+	var s = ''
+	interval_no= setInterval(function(){
+		if(node_now == 0){ 	//进行下一次迭代，刷新页面
+			s = ''
+			myChart.setOption({
+				title: {
+					text: '第' + iter + '次迭代'
+				}
+			});
+		}
+		graph.nodes[node_now].category = 1;
+		graph.nodes[node_now].symbolSize = 30;
+		s += '当前节点为' + node_now + ',影响力为：' + influences[iter][node_now] + '\n'
+		myChart.setOption({
+			title: {
+				subtext: s
+			},
+			series: [
+				{
+					data: graph.nodes,
+					links: graph.links
+				}
+			]
+		});
+		graph.nodes[node_now].category = 0;
+		graph.nodes[node_now].symbolSize = 15;
+		if(node_now == node_num - 1){
+			iter++;
+			node_now = 0;
+		}else{
+			node_now++;
+			if(node_now % 25 == 0){
+				s = '';
+			}
+		}
+		//收敛，显示影响力最大的节点
+		if(iter == max_iter){	
+			graph.nodes[max_inf_node].category = 1;
+			graph.nodes[max_inf_node].symbolSize = 30;
+			myChart.setOption({
+				title: {
+					text: '达到迭代终止条件，总迭代次数为：' + max_iter + '\n影响力最大的节点是：' + max_inf_node,
+					subtext: '其影响力为：' + max_influence
+				},
+				series: [
+					{
+						data: graph.nodes,
+						links: graph.links
+					}
+				]
+			});
+			clearInterval(interval_no);
+		}
+	}, 100);
+
+</script>
+</body>
+</html>
