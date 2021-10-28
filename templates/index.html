@@ -124,9 +124,35 @@
 <script src="../static/layui/layui.js"></script>
 <script src="../static/js/jquery.js"></script>
 <script type="text/javascript" src="../static/js/echarts.js"></script>
+<script src="../static/js/jquery.cookie.js"></script>
 <script type="text/javascript" src="../static/js/echarts.min.js"></script>
 {#自己撰写的本页面的js代码#}
 <script>
+// 登录验证by cookie
+(()=>{
+      if($.cookie('user') == undefined)
+        $(window).attr('location','/login');
+      else {
+        let user = $.cookie('user');
+        $.ajax({
+          type: "POST",
+          url: "/fun",
+          data: {
+            "userName": user
+          },
+          success: function(data) {
+            let $data = $('<dd><a style="cursor: pointer">用户名：'+data.user[0]+'</a></dd>'
+                  + '<dd><a style="cursor: pointer">单位：'+ data.user[4] + '</a></dd>'
+                  + '<dd><a style="cursor: pointer">邮箱：'+ data.user[3] + '</a></dd>' 
+                  + '<dd><a style="cursor: pointer">联系电话：'+ data.user[2] + '</a></dd>')
+            $('#userdata').prepend($data);
+          },
+          error: function() {
+            console.log('error');
+          }
+        })
+      }
+    })()
 //JS
 layui.use(['element', 'layer', 'util'], function(){
   var element = layui.element
@@ -163,13 +189,21 @@ layui.use(['element', 'layer', 'util'], function(){
   if (count === 0) {
       $('#show').on('mouseover', function () {
           var userInfo = "";
-          $("#userInfo").html("");
+           $("#userInfo").html("");
+          // console.log($.cookie('user'));
           $.ajax({
               url: "/getUserInfo",
               type: "POST",
               dataType: "json",
-              processData: false,
-              contentType: false,
+              // processData: false,
+              // contentType: false,
+              data: {
+                    "user": $.cookie('user'),
+                    "phoneNumber": null,
+                    "mail": null,
+                    "unit": null,
+                    "isSuccess": 0,
+                },              
               success: function (data) {
                   if (data.isSuccess === 1) {
                       userInfo = '<dd><a href="javascript:return false;">账号：' + data.user.toString() + '</a></dd>' +

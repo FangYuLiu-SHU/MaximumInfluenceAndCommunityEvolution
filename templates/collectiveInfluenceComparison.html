@@ -76,10 +76,10 @@
     <script src="../static/js/jquery.js"></script>
     <script src="../static/js/jquery.cookie.js"></script>
     <script type="text/javascript">
-<!--        (()=>{-->
-<!--            if($.cookie('user') == undefined)-->
-<!--                $(window).attr('location','/login');-->
-<!--        })()-->
+        (()=>{
+            if($.cookie('user') == undefined)
+                $(window).attr('location','/login');
+        })()
         layui.use('form', function(){
           var form = layui.form;
           var layer = layui.layer;
@@ -153,7 +153,7 @@
                         title: {
                             text: '输入集合'+no+':'+seed+' IC模型模拟一次的激活过程',
                             subtext: '输入集合的影响力是' + active_records.length,
-                            top: 'top',
+                            top: 'bottom',
                             left: 'left'
                         },
                     });
@@ -194,7 +194,7 @@
                     myChart.setOption({
                             title: {
                                 text: title,
-                                top: 'top',
+                                top: 'bottom',
                                 left: 'left'
                             },
                             series: [{
@@ -210,7 +210,7 @@
                             title: {
                                 text: title,
                                 subtext: '第'+(stimulate_round+1)+'次模拟的激活过程',
-                                top: 'top',
+                                top: 'bottom',
                                 left: 'left'
                             },
                             series: [{
@@ -256,7 +256,7 @@
                         title: {
                             text: '输入集合'+no+':'+seed+' 在pageRank算法下的影响力是' + active_records.toFixed(2),
                             //subtext: '输入集合的影响力是' + active_records,
-                            top: 'top',
+                            top: 'bottom',
                             left: 'left'
                         },
                     });
@@ -279,7 +279,7 @@
                         title: {
                             text: '输入集合'+no+':'+seed+' 在最大度算法下的影响力是' + active_records.length,
                             //subtext: '输入集合的影响力是' + active_records.length,
-                            top: 'top',
+                            top: 'bottom',
                             left: 'left'
                         },
                     });

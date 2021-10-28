@@ -6,7 +6,8 @@ import copy
 from flask_socketio import SocketIO
 from threading import Lock
 from flask_mail import Mail, Message
-import pymysql
+import sqlite3
+
 
 thread_lock = Lock()
 
@@ -933,7 +934,7 @@ def dyanmicMOACD_thread():
                   {'data': [0, 0], 'count': 0},
                   namespace='/dyanmicMOACD')
 
-# 登录功能，这里用不到
+
 
 async_mode = None
 thread = None
@@ -945,6 +946,7 @@ path1 = 'static/data/Wiki.txt'
 
 networkTemp, number_of_nodes, graph_data = init_network(path1)
 network_synfix, num_nodes_synfix, graph_data_synfix = init_network(path)
+
 '''
 connection = pymysql.connect(host='localhost',  # host属性
                              user='root',  # 用户名
@@ -953,18 +955,26 @@ connection = pymysql.connect(host='localhost',  # host属性
                              )
 cur = connection.cursor()
 cur.execute('use logindata')
+'''
+connection = sqlite3.connect("logindata.db")
+cur = connection.cursor()
+# cur.execute("delete from udata where user = 'Jagger'")
+
+cur.execute('CREATE TABLE IF NOT EXISTS udata (user varchar(128) PRIMARY KEY, number varchar(11), '
+            'mail varchar(32), unit varchar(32), password varchar(128))')
+
 app.config['MAIL_SERVER'] = 'smtp.qq.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = '719723236@qq.com'
-app.config['MAIL_PASSWORD'] = 'tlwiuoueauapbefb'
+app.config['MAIL_USERNAME'] = '3517717683@qq.com'
+app.config['MAIL_PASSWORD'] = 'psbpzckhcmqncibf'
 mail = Mail(app)
 
 
 @app.route('/checkUser', methods=["POST"])
 def checkUser():
     if request.method == 'POST':
-        cur.execute('use logindata')
+        sqlite3.connect('logindata.db')
         requestArgs = request.values
         user = requestArgs.get('user')
         cur.execute("select * from udata where user = " + "'" + user + "'")
@@ -983,7 +993,7 @@ def forget():
         requestArgs = request.values
         new = requestArgs.get('password')
         user = requestArgs.get('user')
-        cur.execute("update udata set password=MD5('" + new + "') where user='" + user + "'")
+        cur.execute("update udata set password='" + new + "' where user='" + user + "'")
         connection.commit()
         return jsonify({'isSuccess': 1})
 
@@ -1000,7 +1010,7 @@ def register():
         unit = requestArgs.get('unit')
         mail = requestArgs.get('mail')
         str = "'" + user + "'" + ",'" + number + "'," + "'" + mail + "'" + "," \
-              + "'" + unit + "'" + "," + "MD5('" + password + "')"
+              + "'" + unit + "'" + "," + "'" + password + "'"
         cur.execute('insert into udata (user,number,mail,unit,password) values (' + str + ")")
         connection.commit()
         return jsonify({'isSuccess': 1})
@@ -1011,18 +1021,23 @@ def send():
     requestArgs = request.values
     dirMail = requestArgs.get('mail')
     user = requestArgs.get('user')
+    # print(user)
+
     if user is not None:
         cur.execute("select * from udata where user = " + "'" + user + "'")
+        # print("select * from udata where user = " + "'" + user + "'")
         result = cur.fetchone()
-        if result[3] != dirMail:
-            return jsonify({'ischecked': 0})
+        # print("mail" + result[2])
+        if result != None:
+            if result[2] != dirMail:
+                return jsonify({'ischecked': 0})
     verificationList = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
                         'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 's', 't', 'x', 'y', 'z', 'A', 'B', 'C', 'D',
                         'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'S', 'T', 'X', 'Y', 'Z']
     veriCode = ''
     for i in range(4):
         veriCode += verificationList[random.randint(0, len(verificationList) - 1)]
-    msg = Message("可视化平台验证码", sender="719723236@qq.com", recipients=[dirMail])
+    msg = Message("可视化平台验证码", sender="3517717683@qq.com", recipients=[dirMail])
     msg.body = veriCode
     mail.send(msg)
     return jsonify({'code': veriCode, 'ischecked': 1})
@@ -1031,24 +1046,27 @@ def send():
 @app.route('/login', methods=["GET", "POST"])
 def login():
     if request.method == 'GET':
-        cur.execute('use logindata')
+        sqlite3.connect('logindata.db')
         return render_template('login.html')
     elif request.method == 'POST':
         requestArgs = request.values
         user = requestArgs.get('user')
         password = requestArgs.get('password')
+        # print("password" + password)
         cur.execute("select * from udata where user = " + "'" + user + "'")
         result = cur.fetchone()  # 没找到为None, 否则返回对应的元组
-        cur.execute("select md5('" + password + "')")
-        p = cur.fetchone()  # 返回的是三元组，p[0]是需要的值
+        cur.execute("select * from udata where password = " + "'" + password + "'")
+        # p = cur.fetchone()  # 返回的是三元组，p[0]是需要的值
+        # for i in range(5):
+        #     print(result[i] + "result" )
         check = {'userInfo': -1, 'passwordInfo': -1}
         if result is None:
             check['userInfo'] = -1
         elif result is not None:
             check['userInfo'] = 0
-            if p[0] == result[1]:
+            if password == result[4]:
                 check['passwordInfo'] = 1
-            elif p[0] != result[1]:
+            elif password != result[4]:
                 check['passwordInfo'] = 0
         check = json.dumps(check)
         return jsonify({'check': check})
@@ -1061,7 +1079,7 @@ def fun():
     cur.execute("select * from udata where user = " + "'" + user + "'")
     result = cur.fetchone()
     return jsonify({'user': result})
-'''
+
 
 # 选择单个影响力最大的种子基于ic模型（每个节点模拟一次）
 @app.route('/basicIc1')
@@ -2598,114 +2616,114 @@ def test_connect():
     thread = socketio.start_background_task(target=dyanmicMOACD_thread)
 
 
-@app.route('/lpa')
-def lpa(): #缪赏
-    # 获取数据
-    # G = nx.karate_club_graph()
-    networkTemp = []
-    networkFile = open('static/data/Wiki.txt', 'r')
-    # 初始化前端json数据：根据Echarts设计初始化值。参数参考https://echarts.apache.org/zh/option.html#series-graph
-
-    # 设置节点数
-    number_of_nodes = 105
-
-    for line in networkFile.readlines():
-        linePiece = line.split()
-        networkTemp.append([int(linePiece[0]), int(linePiece[1])])
-
-    # 设置传给前端的节点数据边数据的json串
-    graph_data_json = {}
-    nodes_data_json = []
-    for node in range(number_of_nodes):
-        nodes_data_json.append({})
-        nodes_data_json[node]['attributes'] = {}
-        nodes_data_json[node]['attributes']['modularity_class'] = node
-        nodes_data_json[node]['id'] = str(node)
-        nodes_data_json[node]['category'] = ''
-        nodes_data_json[node]['itemStyle'] = ''
-        nodes_data_json[node]['label'] = {}
-        nodes_data_json[node]['label']['normal'] = {}
-        nodes_data_json[node]['label']['normal']['show'] = 'false'
-        nodes_data_json[node]['name'] = str(node)
-        nodes_data_json[node]['symbolSize'] = 35
-        nodes_data_json[node]['value'] = 15
-        nodes_data_json[node]['x'] = 0
-        nodes_data_json[node]['y'] = 0
-    links_data_json = []
-    for link in networkTemp:
-        links_data_json.append({})
-        links_data_json[len(links_data_json) - 1]['id'] = str(len(links_data_json) - 1)
-        links_data_json[len(links_data_json) - 1]['lineStyle'] = {}
-        links_data_json[len(links_data_json) - 1]['lineStyle']['color'] = 'rgb(0,0,0)'
-        links_data_json[len(links_data_json) - 1]['lineStyle']['normal'] = {}
-        links_data_json[len(links_data_json) - 1]['name'] = 'null'
-        links_data_json[len(links_data_json) - 1]['source'] = str(link[0] - 1)
-        links_data_json[len(links_data_json) - 1]['target'] = str(link[1] - 1)
-    graph_data_json['nodes'] = nodes_data_json
-    graph_data_json['links'] = links_data_json
-    graph_data = json.dumps(graph_data_json)
-
-    # lpa算法,返回每次迭代更新的节点
-    def get_neighbors(node):
-        neighbors=[]
-        for i in links_data_json:
-            if (i.get('source')==str(node)):
-                target=int(i.get('target'))
-                neighbors.append([target,nodes_data_json[target].get('attributes').get('modularity_class')])
-            if (i.get('target')==str(node)):
-                source=int(i.get('source'))
-                neighbors.append([source,nodes_data_json[source].get('attributes').get('modularity_class')])
-        return neighbors;
-
-    active_records = []  # 用来存放每个节点的模拟结果
-    max_iter_num = 0  # 迭代次数
-    iter_num=10 #迭代总次数
-    neighbors_and_time=[] #存放循环的次数和邻居节点
-    while max_iter_num < iter_num:
-        active_records.append([])
-        neighbors_and_time.append({})
-        neighbors_and_time[max_iter_num]['time']=max_iter_num+1
-        max_iter_num += 1
-        #print('迭代次数', max_iter_num)
-        for node in range(number_of_nodes):
-            count = {}  # 记录邻居节点及其标签
-            neighbors=get_neighbors(node)
-            neighbortemp=[]
-
-            for nbr in neighbors:  # node的邻居节点
-                neighbortemp.append(nbr[0])
-                label = nbr[1]
-                count[label] = count.setdefault(label, 0) + 1
-            # 找到出现次数最多的标签
-            count_items = sorted(count.items(), key=lambda x: -x[-1])
-            best_labels = [k for k, v in count_items if v == count_items[0][1]]
-            # 当多个标签最大技术值相同时随机选取一个标签
-            if(best_labels != []):
-                label = random.sample(best_labels, 1)[0]  # 返回的是列表，所以需要[0]
-                nodes_data_json[node]['attributes']['modularity_class'] = label  # 更新标签
-
-            active_records[max_iter_num-1].append(label)
-            neighbors_and_time[max_iter_num - 1][str(node)] = neighbortemp
-        #分类的社区数
-        com = len(set([nodes_data_json[node]['attributes']['modularity_class'] for node in range(number_of_nodes)]))
-        neighbors_and_time[max_iter_num-1]['com'] = com
-
-    last_com = len(set([nodes_data_json[node]['attributes']['modularity_class'] for node in range(number_of_nodes)]))
-    active_records = json.dumps(active_records)
-    # neighbors_and_time = json.dumps(neighbors_and_time)
-
-    print('社区数{}'.format(com))
-    #储存分类结果 分类类型--数量
-    classlist=[]
-    sort_list = list()
-    for node in range(number_of_nodes):
-        classlist.append(nodes_data_json[node]['attributes']['modularity_class'])
-    sort_set = set([nodes_data_json[node]['attributes']['modularity_class'] for node in range(number_of_nodes)])
-    for item in sort_set:
-        sort_list.append((item,classlist.count(item)))
-    print(sort_list)
-
-    return render_template('lpa.html',graph_data = graph_data,active_records = active_records,last_com=last_com,neighbors_and_time=neighbors_and_time)
+# @app.route('/lpa')
+# def lpa(): #缪赏
+#     # 获取数据
+#     # G = nx.karate_club_graph()
+#     networkTemp = []
+#     networkFile = open('static/data/Wiki.txt', 'r')
+#     # 初始化前端json数据：根据Echarts设计初始化值。参数参考https://echarts.apache.org/zh/option.html#series-graph
+#
+#     # 设置节点数
+#     number_of_nodes = 105
+#
+#     for line in networkFile.readlines():
+#         linePiece = line.split()
+#         networkTemp.append([int(linePiece[0]), int(linePiece[1])])
+#
+#     # 设置传给前端的节点数据边数据的json串
+#     graph_data_json = {}
+#     nodes_data_json = []
+#     for node in range(number_of_nodes):
+#         nodes_data_json.append({})
+#         nodes_data_json[node]['attributes'] = {}
+#         nodes_data_json[node]['attributes']['modularity_class'] = node
+#         nodes_data_json[node]['id'] = str(node)
+#         nodes_data_json[node]['category'] = ''
+#         nodes_data_json[node]['itemStyle'] = ''
+#         nodes_data_json[node]['label'] = {}
+#         nodes_data_json[node]['label']['normal'] = {}
+#         nodes_data_json[node]['label']['normal']['show'] = 'false'
+#         nodes_data_json[node]['name'] = str(node)
+#         nodes_data_json[node]['symbolSize'] = 35
+#         nodes_data_json[node]['value'] = 15
+#         nodes_data_json[node]['x'] = 0
+#         nodes_data_json[node]['y'] = 0
+#     links_data_json = []
+#     for link in networkTemp:
+#         links_data_json.append({})
+#         links_data_json[len(links_data_json) - 1]['id'] = str(len(links_data_json) - 1)
+#         links_data_json[len(links_data_json) - 1]['lineStyle'] = {}
+#         links_data_json[len(links_data_json) - 1]['lineStyle']['color'] = 'rgb(0,0,0)'
+#         links_data_json[len(links_data_json) - 1]['lineStyle']['normal'] = {}
+#         links_data_json[len(links_data_json) - 1]['name'] = 'null'
+#         links_data_json[len(links_data_json) - 1]['source'] = str(link[0] - 1)
+#         links_data_json[len(links_data_json) - 1]['target'] = str(link[1] - 1)
+#     graph_data_json['nodes'] = nodes_data_json
+#     graph_data_json['links'] = links_data_json
+#     graph_data = json.dumps(graph_data_json)
+#
+#     # lpa算法,返回每次迭代更新的节点
+#     def get_neighbors(node):
+#         neighbors=[]
+#         for i in links_data_json:
+#             if (i.get('source')==str(node)):
+#                 target=int(i.get('target'))
+#                 neighbors.append([target,nodes_data_json[target].get('attributes').get('modularity_class')])
+#             if (i.get('target')==str(node)):
+#                 source=int(i.get('source'))
+#                 neighbors.append([source,nodes_data_json[source].get('attributes').get('modularity_class')])
+#         return neighbors;
+#
+#     active_records = []  # 用来存放每个节点的模拟结果
+#     max_iter_num = 0  # 迭代次数
+#     iter_num=10 #迭代总次数
+#     neighbors_and_time=[] #存放循环的次数和邻居节点
+#     while max_iter_num < iter_num:
+#         active_records.append([])
+#         neighbors_and_time.append({})
+#         neighbors_and_time[max_iter_num]['time']=max_iter_num+1
+#         max_iter_num += 1
+#         #print('迭代次数', max_iter_num)
+#         for node in range(number_of_nodes):
+#             count = {}  # 记录邻居节点及其标签
+#             neighbors=get_neighbors(node)
+#             neighbortemp=[]
+#
+#             for nbr in neighbors:  # node的邻居节点
+#                 neighbortemp.append(nbr[0])
+#                 label = nbr[1]
+#                 count[label] = count.setdefault(label, 0) + 1
+#             # 找到出现次数最多的标签
+#             count_items = sorted(count.items(), key=lambda x: -x[-1])
+#             best_labels = [k for k, v in count_items if v == count_items[0][1]]
+#             # 当多个标签最大技术值相同时随机选取一个标签
+#             if(best_labels != []):
+#                 label = random.sample(best_labels, 1)[0]  # 返回的是列表，所以需要[0]
+#                 nodes_data_json[node]['attributes']['modularity_class'] = label  # 更新标签
+#
+#             active_records[max_iter_num-1].append(label)
+#             neighbors_and_time[max_iter_num - 1][str(node)] = neighbortemp
+#         #分类的社区数
+#         com = len(set([nodes_data_json[node]['attributes']['modularity_class'] for node in range(number_of_nodes)]))
+#         neighbors_and_time[max_iter_num-1]['com'] = com
+#
+#     last_com = len(set([nodes_data_json[node]['attributes']['modularity_class'] for node in range(number_of_nodes)]))
+#     active_records = json.dumps(active_records)
+#     # neighbors_and_time = json.dumps(neighbors_and_time)
+#
+#     print('社区数{}'.format(com))
+#     #储存分类结果 分类类型--数量
+#     classlist=[]
+#     sort_list = list()
+#     for node in range(number_of_nodes):
+#         classlist.append(nodes_data_json[node]['attributes']['modularity_class'])
+#     sort_set = set([nodes_data_json[node]['attributes']['modularity_class'] for node in range(number_of_nodes)])
+#     for item in sort_set:
+#         sort_list.append((item,classlist.count(item)))
+#     print(sort_list)
+#
+#     return render_template('lpa.html',graph_data = graph_data,active_records = active_records,last_com=last_com,neighbors_and_time=neighbors_and_time)
 
 
 #主界面跳转服务
@@ -2714,21 +2732,42 @@ def index():
     return render_template('index.html')
 
 #登录后台服务
-@app.route('/login')
-def login():
-    return render_template('login.html')
+# @app.route('/login')
+# def login():
+#     return render_template('login.html')
 
 # 获得已登录用户信息服务（暂时写死，后期改成读取数据库用户信息表）
 @app.route('/getUserInfo', methods=["POST"])
 def getUserInfo():
     userInfo = {}
-    userInfo['user'] = 'test user'
-    userInfo['phoneNumber'] = '12345678910'
-    userInfo['mail'] = 'example@shu.com'
-    userInfo['unit'] = '上海大学'
-    userInfo['isSuccess'] = 1
-    newData = json.dumps(userInfo)  # json.dumps封装
-    return newData
+    if request.method == 'POST':
+        sqlite3.connect('logindata.db')
+        requestArgs = request.values
+        user = requestArgs.get('user')
+        # print(user)
+        # if user is None:
+        #     return jsonify({'isSuccess': 0})
+        cur.execute("select * from udata where user = " + "'" + user + "'")
+        result = cur.fetchone()
+        # print(type(result[2]), type(result[3]),type(result[1]))
+        if result is None:
+            return jsonify({'isSuccess': 0})
+        elif result[0] == user:
+            userInfo['user'] = result[0]
+            userInfo['phoneNumber'] = result[1]
+            userInfo['mail'] = result[2]
+            userInfo['unit'] = result[3]
+            userInfo['isSuccess'] = 1
+            newData = json.dumps(userInfo)  # json.dumps封装
+            return newData
+
+    # userInfo['user'] = 'Jagger'         # result[0]
+    # userInfo['phoneNumber'] = '19821411673'          # result[1]
+    # userInfo['mail'] = '3517717683@qq.com'          # result[2]
+    # userInfo['unit'] = '上海大学'               # result[3]
+    # userInfo['isSuccess'] = 1
+    # newData = json.dumps(userInfo)  # json.dumps封装
+    # return newData
 
 # 使用说明，内嵌子页面跳转服务
 @app.route('/introduce')
