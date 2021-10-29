@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+import os
 from flask import Flask, render_template, request, flash, jsonify
 import json
 import random
@@ -856,7 +857,7 @@ def dyanmicMOACD_thread():
     pop_N = 50
     T = 11  # 总时间步 一共T-1个时间步
 
-    file_qian = "static/data/synfix/z_3/synfix_3.t"  # 文件名前缀
+    file_qian = os.path.dirname(__file__) + "/static/data/synfix/z_3/synfix_3.t"  # 文件名前缀
     # file_qian = "static/data/Cell/real.t"  # 文件名前缀
     file_bian = ".edges"  # 后缀--边
 
@@ -941,8 +942,8 @@ thread = None
 app = Flask(__name__)
 app.secret_key = 'lisenzzz'
 socketio = SocketIO(app, async_mode=async_mode)
-path = 'static/data/synfix/z_3/synfix_3.t01.edges'
-path1 = 'static/data/Wiki.txt'
+path = os.path.dirname(__file__) + '/static/data/synfix/z_3/synfix_3.t01.edges'
+path1 = os.path.dirname(__file__) + '/static/data/Wiki.txt'
 
 networkTemp, number_of_nodes, graph_data = init_network(path1)
 network_synfix, num_nodes_synfix, graph_data_synfix = init_network(path)
@@ -1994,7 +1995,7 @@ def Evolution():
         global eNum
         global networkData
         global graph_edge
-        path = r"static/data/reptilia-tortoise-network-cs.edges"  # 以' '分隔
+        path = os.path.dirname(__file__) +"/static/data/reptilia-tortoise-network-cs.edges"  # 以' '分隔
         networkData, node_num, graph_data = init_network(path, opacity=0)
         graph_data = json.loads(graph_data)
         graph_edge = graph_data['links']
