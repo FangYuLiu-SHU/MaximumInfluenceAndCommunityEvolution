@@ -11,10 +11,10 @@
 <script src="../static/js/jquery.js"></script>
 <script src="../static/js/jquery.cookie.js"></script>
 <script type="text/javascript">
-<!--    (()=>{-->
-<!--        if($.cookie('user') == undefined)-->
-<!--            $(window).attr('location','/login');-->
-<!--    })()-->
+    (()=>{
+        if($.cookie('user') == undefined)
+            $(window).attr('location','/login');
+    })()
     var dom = document.getElementById("container");
     var myChart = echarts.init(dom);
     var option;

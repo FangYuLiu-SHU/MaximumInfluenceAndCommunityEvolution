@@ -7,11 +7,17 @@
   <div id="container" style="height: 100%"></div>
   <script type="text/javascript" src="/static/js/echarts.js"></script>
   <script type="text/javascript" src="/static/js/function.js"></script>
+  <script src="../static/js/jquery.js"></script>
+  <script src="../static/js/jquery.cookie.js"></script>
   <script type="text/javascript">
+    (()=>{
+        if($.cookie('user') == undefined)
+            $(window).attr('location','/login');
+    })()
     var dom = document.getElementById("container");
     var myChart = echarts.init(dom);
     var option;
-    var graph = {{ graph_data | tojson }} 
+    var graph = {{ graph_data | tojson }}
     graph = init_graph(graph); 
     var community = {{community}}
     option = initOption(graph, community.length);

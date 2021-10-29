@@ -102,7 +102,7 @@
         <button id="submit" type="button" class="layui-btn layui-btn-normal" disabled>提交</button>
     </div>
     <p></p>
-    <button id="control" type="button" class="layui-btn layui-btn-normal">暂停社区演化</button>
+    <button id="control" type="button" class="layui-btn layui-btn-normal">暂停社区划分</button>
     <div id="container" style="height: 100%"></div>
     <script type="text/javascript" src="/static/js/echarts.js"></script>
     <script type="text/javascript" src="../static/layui/layui.js"></script>
@@ -111,10 +111,10 @@
     <script src="../static/js/jquery.cookie.js"></script>
     <script type="text/javascript">
         'use strict';
-		// (()=>{
-		// 	if($.cookie('user') == undefined)
-		// 		$(window).attr('location','/login');
-		// })()
+		(()=>{
+			if($.cookie('user') == undefined)
+				$(window).attr('location','/login');
+		})()
         let dom = document.getElementById("container");
         let myChart = echarts.init(dom);
         let option;

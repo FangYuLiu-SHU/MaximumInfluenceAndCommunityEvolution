@@ -11,7 +11,13 @@
 <script type="text/javascript" src="/static/js/jquery.js"></script>
 <!--socketio踩坑链接：https://blog.csdn.net/xiejunna/article/details/120111655?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_title~default-0.no_search_link&spm=1001.2101.3001.4242.0-->
 <script type="text/javascript" src="//cdn.bootcss.com/socket.io/1.5.1/socket.io.min.js"></script>
+<script src="../static/js/jquery.js"></script>
+<script src="../static/js/jquery.cookie.js"></script>
 <script type="text/javascript">
+    (()=>{
+        if($.cookie('user') == undefined)
+            $(window).attr('location','/login');
+    })()
     var dom = document.getElementById("container");
     var myChart = echarts.init(dom);
     var option;
