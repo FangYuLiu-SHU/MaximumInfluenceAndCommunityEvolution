@@ -258,5 +258,23 @@
         <br>
     
 </fieldset>
+
+<script src="../static/js/jquery.js"></script>
+<script src="../static/js/jquery.cookie.js"></script>
+<script>
+layui.use(['form', 'element', 'layer', 'util', 'table'], function(){
+  var element = layui.element
+    ,form = layui.form
+    ,layer = layui.layer
+    ,util = layui.util
+    ,table = layui.table
+    ,$ = layui.$;
+    (()=>{
+        if($.cookie('user') == undefined)
+        $(window).attr('location','/login');
+    })()
+});
+</script>
+
 </body>
 </html>

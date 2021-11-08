@@ -956,7 +956,7 @@ connection = pymysql.connect(host='localhost',  # host属性
 cur = connection.cursor()
 cur.execute('use logindata')
 '''
-connection = sqlite3.connect("logindata.db")
+connection = sqlite3.connect("logindata.db", check_same_thread=False)
 cur = connection.cursor()
 # cur.execute("delete from udata where user = 'Jagger'")
 
