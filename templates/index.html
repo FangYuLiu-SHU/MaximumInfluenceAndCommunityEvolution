@@ -177,11 +177,24 @@ layui.use(['element', 'layer', 'util'], function(){
       });
     }
   });
+
+function delAllCookie(){    
+          var myDate=new Date();    
+          myDate.setTime(-1000);//设置时间    
+          var data=document.cookie;    
+          var dataArray=data.split("; ");    
+          for(var i=0;i<dataArray.length;i++){    
+               var varName=dataArray[i].split("=");    
+               document.cookie=varName[0]+"=''; expires="+myDate.toGMTString();    
+          }    
+                        
+    }    
   //退出登录js
   $('#quit').on('click', function () {
       var r = confirm("你确定要退出吗？");
       if (r === true) {
           $(window).attr('location', '/login');
+          delAllCookie();
       }
   });
   //ajax动态更新用户信息展示
